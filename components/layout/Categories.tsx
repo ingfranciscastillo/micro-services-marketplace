@@ -1,5 +1,5 @@
 import React from 'react'
-import {CategoryCard} from "@/components/Marketplace/CategoryCard";
+import {CategoryCard} from "@/components/marketplace/CategoryCard";
 import {
     Bot,
     Mail,

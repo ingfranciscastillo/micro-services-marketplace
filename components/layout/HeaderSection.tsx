@@ -5,7 +5,7 @@ import {Badge} from "@/components/ui/badge"
 import {Input} from "@/components/ui/input";
 import {ArrowRight, Code2, Gauge, Search, Shield} from "lucide-react";
 import {Button} from "@/components/ui/button";
-import {CodeBlock} from "@/components/Marketplace/CodeBlock";
+import {CodeBlock} from "@/components/marketplace/CodeBlock";
 
 const exampleCode = `// Install the DevHub SDK
 npm install @devhub/sdk

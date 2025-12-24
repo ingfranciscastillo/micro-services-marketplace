@@ -2,7 +2,7 @@ import React from 'react'
 import Link from "next/link";
 import {Button} from "@/components/ui/button";
 import {ArrowRight} from "lucide-react";
-import {ServiceCard} from "@/components/Marketplace/ServiceCard";
+import {ServiceCard} from "@/components/marketplace/ServiceCard";
 
 const featuredServices = [
     {
