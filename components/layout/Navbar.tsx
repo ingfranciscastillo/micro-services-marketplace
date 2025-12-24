@@ -26,7 +26,7 @@ const navLinks = [
 export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const location = usePathname();
-    const isLoggedIn = false; // This would come from auth context
+    const isLoggedIn = true; // This would come from auth context
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -34,7 +34,7 @@ export function Navbar() {
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
-                        <Zap className="h-5 w-5 text-primary-foreground" />
+                        <Zap className="h-5 w-5 text-foreground" />
                     </div>
                     <span className="text-xl font-bold tracking-tight">DevHub</span>
                 </Link>
@@ -86,7 +86,7 @@ export function Navbar() {
                             </Button>
                             <Avatar className="h-9 w-9 cursor-pointer">
                                 <AvatarImage src="" />
-                                <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                                <AvatarFallback className="bg-primary text-foreground text-sm">
                                     JD
                                 </AvatarFallback>
                             </Avatar>
