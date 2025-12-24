@@ -1,16 +1,25 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Providers from "./providers"
+import React from "react";
+import {Geist, Fira_Code, Lora } from "next/font/google"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const geist = Geist({
+    subsets: ["latin"],
+    variable: "--font-geist"
+})
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const fira_code = Fira_Code({
+    weight: "400",
+    subsets: ["latin"],
+    variable: "--font-fira"
+})
+
+const lora = Lora({
+    weight: "400",
+    subsets: ["latin"],
+    variable: "--font-lora"
+})
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -23,11 +32,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning className={`${geist.variable} ${lora.variable} ${fira_code.variable}`}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+      <Providers>
         {children}
+      </Providers>
       </body>
     </html>
   );
