@@ -151,9 +151,11 @@ function Sidebar() {
             <p className="text-sm text-muted-foreground mb-3">
               Start earning by selling your microservices
             </p>
-            <Button variant="default" size="sm" className="w-full">
-              Start Selling
-            </Button>
+            <Link href={"/sell"}>
+              <Button variant="default" size="sm" className="w-full">
+                Start Selling
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>

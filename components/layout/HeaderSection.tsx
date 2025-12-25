@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, Code2, Gauge, Search, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CodeBlock } from "@/components/Marketplace/CodeBlock";
+import FloatingCards from "@/components/layout/FloatingServiceCards";
 
 const exampleCode = `// Install the DevHub SDK
 npm install @devhub/sdk
@@ -30,18 +30,17 @@ const HeaderSection = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8 text-center lg:text-left">
             <Badge variant="secondary" className="px-4 py-1.5 text-sm">
-              🚀 Over 10,000+ microservices available
+              🚀 Más de 10,000 micro-servicios disponibles
             </Badge>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight animate-fade-in">
-              The Marketplace for{" "}
-              <span className="text-primary">Developer Tools</span>
+              Micro-servicios profesionales.{" "}
+              <span className="text-primary">Resultados en horas.</span>
             </h1>
             <p
               className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0"
               style={{ animationDelay: "0.1s" }}
             >
-              Buy and sell production-ready APIs, automations, and AI tools.
-              Ship faster with battle-tested microservices.
+              Conecta al instante con expertos verificados para tareas de diseño, desarrollo y contenido. Simple, seguro y sin complicaciones.
             </p>
 
             {/* Search bar */}
@@ -52,12 +51,12 @@ const HeaderSection = () => {
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
-                  placeholder="Search APIs, automations, AI tools..."
+                  placeholder="Busca diseño, desarrollo, traducciones…"
                   className="pl-12 h-14 text-base rounded-xl border-2 focus:border-primary"
                 />
               </div>
               <Button variant="default" size="lg" className={"h-14"}>
-                Explore
+                Explorar servicios
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </div>
@@ -66,15 +65,15 @@ const HeaderSection = () => {
             <div className="flex flex-wrap justify-center lg:justify-start gap-6 pt-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-accent" />
-                <span>Verified sellers</span>
+                <span>Profesionales verificados</span>
               </div>
               <div className="flex items-center gap-2">
                 <Gauge className="h-5 w-5 text-accent" />
-                <span>99.9% uptime SLA</span>
+                <span>Pagos seguros y protegidos</span>
               </div>
               <div className="flex items-center gap-2">
                 <Code2 className="h-5 w-5 text-accent" />
-                <span>TypeScript ready</span>
+                <span>Entrega rápida garantizada</span>
               </div>
             </div>
           </div>
@@ -84,7 +83,7 @@ const HeaderSection = () => {
             className="hidden lg:block animate-slide-in-right"
             style={{ animationDelay: "0.3s" }}
           >
-            <CodeBlock code={exampleCode} language="typescript" />
+            <FloatingCards isVisible={true}/>
           </div>
         </div>
       </div>
