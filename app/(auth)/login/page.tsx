@@ -9,35 +9,58 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner"
-import { Zap, Mail, Eye, EyeOff } from "lucide-react";
+import { Zap, Eye, EyeOff } from "lucide-react";
+import {useTheme} from "next-themes"
 import {GithubDark} from "@/components/ui/svgs/githubDark";
 import {GithubLight} from "@/components/ui/svgs/githubLight";
-
-import {useTheme} from "next-themes"
 import {Google} from "@/components/ui/svgs/google";
 
+import {useForm} from "@tanstack/react-form"
+import * as z from "zod"
+import {Field, FieldError, FieldGroup, FieldLabel} from "@/components/ui/field"
+import {authClient} from "@/lib/auth/auth-client";
+
+const loginSchema = z.object({
+    email: z
+        .email(),
+    password: z
+        .string()
+        .min(8, "Description must be at least 20 characters.")
+        .max(100, "Description must be at most 100 characters."),
+})
+
 export default function Login() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
     const {theme} = useTheme()
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
+    const form = useForm({
+        defaultValues: {
+            email: "",
+            password: "",
+        },
+        validators: {
+            onSubmit: loginSchema
+        },
+        onSubmit: async ({value}) => {
+            setIsLoading(true)
+           const {data, error} = await authClient.signIn.email({
+               email: value.email,
+               password: value.password
+           })
 
-        // Simulate login
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+            setIsLoading(false)
 
-        toast("Welcome back", {
-            description: "You've successfully signed in.",
-        });
+            if(error) {
+                console.error(error)
+                return
+            }
 
-        setIsLoading(false);
-        router.push("/dashboard");
-    };
+            router.push("/dashboard")
+
+        }
+    })
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 gradient-hero">
@@ -58,70 +81,105 @@ export default function Login() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="you@example.com"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
+                        <form id={"login-form"} className="space-y-4" onSubmit={(e) => {
+                            e.preventDefault();
+                            form.handleSubmit()
+                        }}>
+                            <FieldGroup>
+                                <form.Field
+                                    name="email"
+                                    children={(field) => {
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                                                <Input
+                                                    id={field.name}
+                                                    name={field.name}
+                                                    type="email"
+                                                    placeholder="you@example.com"
+                                                    value={field.state.value}
+                                                    onBlur={field.handleBlur}
+                                                    aria-invalid={isInvalid}
+                                                    onChange={(e) => field.handleChange(e.target.value)}
+                                                    autoComplete={"off"}
+                                                    required
+                                                />
+                                                {isInvalid && (
+                                                    <FieldError errors={field.state.meta.errors} />
+                                                )}
+                                            </Field>
+                                        )
+                                    }}
                                 />
-                            </div>
+                                <form.Field
+                                    name="password"
+                                    children={(field) => {
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <div className={"flex items-center justify-between"}>
+                                                    <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                                                    <Link
+                                                        href="/forgot-password"
+                                                        className="text-sm text-primary hover:underline"
+                                                    >
+                                                        Forgot password?
+                                                    </Link>
+                                                </div>
+                                                <div className="relative">
+                                                    <Input
+                                                        id={field.name}
+                                                        name={field.name}
+                                                        type={showPassword ? "text" : "password"}
+                                                        placeholder="Enter your password"
+                                                        value={field.state.value}
+                                                        onBlur={field.handleBlur}
+                                                        aria-invalid={isInvalid}
+                                                        onChange={(e) => field.handleChange(e.target.value)}
+                                                        autoComplete={"off"}
+                                                        required
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="absolute right-0 top-0 h-full px-3"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                    >
+                                                        {showPassword ? (
+                                                            <EyeOff className="h-4 w-4" />
+                                                        ) : (
+                                                            <Eye className="h-4 w-4" />
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                                {isInvalid && (
+                                                    <FieldError errors={field.state.meta.errors} />
+                                                )}
+                                            </Field>
+                                        )
+                                    }}
+                                />
+                                <Field orientation={"horizontal"}>
+                                    <Checkbox id="remember" />
+                                    <FieldLabel htmlFor="remember" className="text-sm font-normal cursor-pointer">
+                                        Remember me for 30 days
+                                    </FieldLabel>
+                                </Field>
 
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <Label htmlFor="password">Password</Label>
-                                    <Link
-                                        href="/auth/forgot-password"
-                                        className="text-sm text-primary hover:underline"
-                                    >
-                                        Forgot password?
-                                    </Link>
-                                </div>
-                                <div className="relative">
-                                    <Input
-                                        id="password"
-                                        type={showPassword ? "text" : "password"}
-                                        placeholder="Enter your password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
-                                    />
+                                <Field>
                                     <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="absolute right-0 top-0 h-full px-3"
-                                        onClick={() => setShowPassword(!showPassword)}
+                                        type="submit"
+                                        variant="default"
+                                        className="w-full"
+                                        size="lg"
+                                        disabled={isLoading}
                                     >
-                                        {showPassword ? (
-                                            <EyeOff className="h-4 w-4" />
-                                        ) : (
-                                            <Eye className="h-4 w-4" />
-                                        )}
+                                        {isLoading ? "Signing in..." : "Sign in"}
                                     </Button>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <Checkbox id="remember" />
-                                <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
-                                    Remember me for 30 days
-                                </Label>
-                            </div>
-
-                            <Button
-                                type="submit"
-                                variant="default"
-                                className="w-full"
-                                size="lg"
-                                disabled={isLoading}
-                            >
-                                {isLoading ? "Signing in..." : "Sign in"}
-                            </Button>
+                                </Field>
+                            </FieldGroup>
                         </form>
 
                         <div className="relative my-6">
@@ -150,7 +208,7 @@ export default function Login() {
 
                         <p className="text-center text-sm text-muted-foreground mt-6">
                             Don't have an account?{" "}
-                            <Link href="/auth/register" className="text-primary hover:underline font-medium">
+                            <Link href="/register" className="text-primary hover:underline font-medium">
                                 Sign up
                             </Link>
                         </p>

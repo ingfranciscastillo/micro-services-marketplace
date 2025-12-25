@@ -89,10 +89,10 @@ export function Navbar() {
             </>
           ) : (
             <>
-              <Link href="/auth/login" className="hidden sm:block">
+              <Link href="/login" className="hidden sm:block">
                 <Button variant="ghost">Sign in</Button>
               </Link>
-              <Link href="/auth/register">
+              <Link href="/register">
                 <Button variant="default" className="hidden sm:flex">
                   Get Started
                 </Button>
@@ -124,12 +124,12 @@ export function Navbar() {
                   </Link>
                 ))}
                 <hr className="my-4" />
-                <Link href="/auth/login" onClick={() => setIsOpen(false)}>
+                <Link href="/login" onClick={() => setIsOpen(false)}>
                   <Button variant="outline" className="w-full">
                     Sign in
                   </Button>
                 </Link>
-                <Link href="/auth/register" onClick={() => setIsOpen(false)}>
+                <Link href="/register" onClick={() => setIsOpen(false)}>
                   <Button variant="default" className="w-full">
                     Get Started
                   </Button>
