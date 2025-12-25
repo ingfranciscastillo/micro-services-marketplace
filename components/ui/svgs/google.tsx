@@ -171,7 +171,7 @@ const Google = (props: SVGProps<SVGSVGElement>) => (
         height="1.116"
         x="-.048"
         y="-.058"
-        color-interpolation-filters="sRGB"
+        colorInterpolationFilters="sRGB"
       >
         <feGaussianBlur stdDeviation="1.701" />
       </filter>
@@ -181,7 +181,7 @@ const Google = (props: SVGProps<SVGSVGElement>) => (
         height="1.02"
         x="-.017"
         y="-.01"
-        color-interpolation-filters="sRGB"
+        colorInterpolationFilters="sRGB"
       >
         <feGaussianBlur stdDeviation=".242" />
       </filter>

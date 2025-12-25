@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { usePathname } from "next/navigation";
 import { ModeToggle } from "@/components/modeToggle";
+import { authClient } from "@/lib/auth/auth-client";
 
 const navLinks = [
   { label: "Explore", href: "/marketplace" },
@@ -21,7 +22,7 @@ const navLinks = [
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = usePathname();
-  const isLoggedIn = true; // This would come from auth context
+  const { data: session } = authClient.useSession();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -68,7 +69,7 @@ export function Navbar() {
             <Search className="h-5 w-5" />
           </Button>
 
-          {isLoggedIn ? (
+          {session ? (
             <>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
