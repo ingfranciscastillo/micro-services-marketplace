@@ -25,8 +25,7 @@ const loginSchema = z.object({
         .email(),
     password: z
         .string()
-        .min(8, "Description must be at least 20 characters.")
-        .max(100, "Description must be at most 100 characters."),
+        .min(8, "Password must be at least 8 characters.")
 })
 
 export default function Login() {
