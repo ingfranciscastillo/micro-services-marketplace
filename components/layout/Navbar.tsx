@@ -32,7 +32,6 @@ export function Navbar() {
             <Zap className="h-5 w-5 text-foreground" />
           </div>
           <span className="text-xl font-bold tracking-tight">DevHub</span>
-          <h1>{hello.data?.greeting} </h1>
         </Link>
 
         {/* Desktop Navigation */}
