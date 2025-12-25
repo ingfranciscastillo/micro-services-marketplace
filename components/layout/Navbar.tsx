@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -9,8 +10,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { usePathname } from "next/navigation";
 import { ModeToggle } from "@/components/modeToggle";
-import { useTRPC } from "@/trpc/client";
-import { useQuery } from "@tanstack/react-query";
 
 const navLinks = [
   { label: "Explore", href: "/marketplace" },
@@ -23,9 +22,6 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = usePathname();
   const isLoggedIn = true; // This would come from auth context
-  const trpc = useTRPC();
-
-  const hello = useQuery(trpc.hello.queryOptions({ text: "mundo" }));
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
