@@ -25,7 +25,8 @@ const loginSchema = z.object({
         .email(),
     password: z
         .string()
-        .min(8, "Password must be at least 8 characters.")
+        .min(8, "Password must be at least 8 characters."),
+    rememberMe: z.boolean()
 })
 
 export default function Login() {
@@ -38,21 +39,24 @@ export default function Login() {
         defaultValues: {
             email: "",
             password: "",
+            rememberMe: false
         },
         validators: {
             onSubmit: loginSchema
         },
         onSubmit: async ({value}) => {
             setIsLoading(true)
+
            const {data, error} = await authClient.signIn.email({
                email: value.email,
-               password: value.password
+               password: value.password,
+               rememberMe: value.rememberMe
            })
 
             setIsLoading(false)
 
             if(error) {
-                console.error(error)
+                toast.error(error.message)
                 return
             }
 
@@ -160,12 +164,28 @@ export default function Login() {
                                         )
                                     }}
                                 />
-                                <Field orientation={"horizontal"}>
-                                    <Checkbox id="remember" />
-                                    <FieldLabel htmlFor="remember" className="text-sm font-normal cursor-pointer">
-                                        Remember me for 30 days
-                                    </FieldLabel>
-                                </Field>
+                                <form.Field
+                                    name="rememberMe"
+                                    children={(field) => {
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
+                                        return (
+                                            <Field orientation={"horizontal"} data-invalid={isInvalid}>
+                                                    <Checkbox
+                                                        id={field.name}
+                                                        name={field.name}
+                                                        checked={field.state.value}
+                                                        onCheckedChange={(value) => {
+                                                            field.handleChange(!!value);
+                                                        }}
+                                                    />
+                                                    <FieldLabel htmlFor={field.name} className="text-sm font-normal cursor-pointer">
+                                                        Remember me
+                                                    </FieldLabel>
+                                            </Field>
+                                        )
+                                    }}
+                                />
+
 
                                 <Field>
                                     <Button

@@ -5,16 +5,15 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Search, Menu, Zap, ShoppingCart, Bell } from "lucide-react";
+import { Search, Menu, Zap} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { usePathname } from "next/navigation";
+import {usePathname, useRouter} from "next/navigation";
 import { ModeToggle } from "@/components/modeToggle";
 import { authClient } from "@/lib/auth/auth-client";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
 
 const navLinks = [
   { label: "Explore", href: "/marketplace" },
-  { label: "Categories", href: "/categories" },
   { label: "Pricing", href: "/pricing" },
   { label: "Docs", href: "/docs" },
 ];
@@ -23,6 +22,7 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = usePathname();
   const { data: session } = authClient.useSession();
+  const router = useRouter();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -71,21 +71,34 @@ export function Navbar() {
 
           {session ? (
             <>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
-                  3
-                </Badge>
-              </Button>
-              <Button variant="ghost" size="icon">
-                <ShoppingCart className="h-5 w-5" />
-              </Button>
-              <Avatar className="h-9 w-9 cursor-pointer">
-                <AvatarImage src="" />
-                <AvatarFallback className="bg-primary text-foreground text-sm">
-                  JD
-                </AvatarFallback>
-              </Avatar>
+              <Link href={"/dashboard"}>
+                <Button variant="outline" className="w-full">
+                  Dashboard
+                </Button>
+              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size={"icon"} className={"rounded-full focus:outline-none"} variant={"outline"}>
+                    <Avatar className={"size-8"}>
+                      <AvatarImage src={session.user.image ?? undefined} alt={"user avatar"} />
+                      <AvatarFallback>
+                        {session.user.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                      className="text-red-500"
+                      onClick={async () => {
+                        await authClient.signOut()
+                        router.push("/")
+                      }}
+                  >
+                    Cerrar sesión
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           ) : (
             <>
@@ -124,16 +137,30 @@ export function Navbar() {
                   </Link>
                 ))}
                 <hr className="my-4" />
-                <Link href="/login" onClick={() => setIsOpen(false)}>
-                  <Button variant="outline" className="w-full">
-                    Sign in
-                  </Button>
-                </Link>
-                <Link href="/register" onClick={() => setIsOpen(false)}>
-                  <Button variant="default" className="w-full">
-                    Get Started
-                  </Button>
-                </Link>
+                {
+                  session ? (
+                      <>
+                        <Link href={"/dashboard"}>
+                          <Button variant="outline" className="w-full">
+                            Dashboard
+                          </Button>
+                        </Link>
+                      </>
+                  ) : (
+                      <>
+                        <Link href="/login" onClick={() => setIsOpen(false)}>
+                          <Button variant="outline" className="w-full">
+                            Sign in
+                          </Button>
+                        </Link>
+                        <Link href="/register" onClick={() => setIsOpen(false)}>
+                          <Button variant="default" className="w-full">
+                            Get Started
+                          </Button>
+                        </Link>
+                      </>
+                  )
+                }
               </nav>
             </SheetContent>
           </Sheet>

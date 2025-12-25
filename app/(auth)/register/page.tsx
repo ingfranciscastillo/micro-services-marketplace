@@ -109,7 +109,7 @@ export default function Register() {
                                             field.state.meta.isTouched && !field.state.meta.isValid
                                         return (
                                             <Field>
-                                                <FieldLabel htmlFor="name">Full name</FieldLabel>
+                                                <FieldLabel htmlFor={field.name}>Full name</FieldLabel>
                                                 <Input
                                                     id={field.name}
                                                     name={field.name}
@@ -136,7 +136,7 @@ export default function Register() {
                                             field.state.meta.isTouched && !field.state.meta.isValid
                                         return (
                                             <Field>
-                                                <FieldLabel htmlFor="name">Email</FieldLabel>
+                                                <FieldLabel htmlFor={field.name}>Email</FieldLabel>
                                                 <Input
                                                     id={field.name}
                                                     name={field.name}
@@ -163,7 +163,7 @@ export default function Register() {
                                             field.state.meta.isTouched && !field.state.meta.isValid
                                         return (
                                             <Field>
-                                                <FieldLabel htmlFor="name">Password</FieldLabel>
+                                                <FieldLabel htmlFor={field.name}>Password</FieldLabel>
                                                 <div className="relative">
                                                     <Input
                                                         id={field.name}
@@ -216,7 +216,7 @@ export default function Register() {
                                                     }}
                                                 />
                                                 <div className="flex items-start gap-2">
-                                                    <Label htmlFor="terms" className="text-sm font-normal cursor-pointer leading-relaxed">
+                                                    <FieldLabel htmlFor={field.name} className="text-sm font-normal cursor-pointer leading-relaxed">
                                                         I agree to the{" "}
                                                         <Link href="/terms" className="text-primary hover:underline">
                                                             Terms of Service
@@ -225,7 +225,7 @@ export default function Register() {
                                                         <Link href="/privacy" className="text-primary hover:underline">
                                                             Privacy Policy
                                                         </Link>
-                                                    </Label>
+                                                    </FieldLabel>
                                                 </div>
                                             </Field>
                                         )
