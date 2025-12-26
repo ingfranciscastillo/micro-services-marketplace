@@ -2,14 +2,6 @@
 
 import React from 'react'
 import {CategoryCard} from "@/components/Marketplace/CategoryCard";
-import {
-    Bot,
-    Mail,
-    CreditCard,
-    Database,
-    Cloud,
-    Webhook
-} from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
 import {useTRPC} from "@/trpc/client";
 
@@ -17,7 +9,15 @@ const CategoriesSection = () => {
 
     const trpc = useTRPC()
 
-    const {data: categories} = useQuery(trpc.categories.getAll.queryOptions())
+    const {data: categories, isLoading} = useQuery(trpc.categories.getAll.queryOptions())
+
+    if(isLoading) {
+        return (
+            <p>Loading...</p>
+        )
+    }
+
+    if(!categories) return null
 
     return (
     <section className="py-20 bg-secondary/30">
@@ -30,9 +30,9 @@ const CategoriesSection = () => {
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/*{categories.map((category) => (
-                    <CategoryCard count={categories.servicesCount} href={""} key={category.name} {...category} />
-                ))}*/}
+                {categories.map((category) => (
+                    <CategoryCard serviceCount={category.servicesCount} key={category.name} {...category} />
+                ))}
             </div>
         </div>
     </section>
