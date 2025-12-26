@@ -4,6 +4,13 @@ import { cache } from "react";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db"; // your drizzle instance
 import { nextCookies } from "better-auth/next-js";
+import {polar, portal, usage, webhooks} from "@polar-sh/better-auth"
+import {Polar} from "@polar-sh/sdk"
+
+const polarClient = new Polar({
+    accessToken: process.env.POLAR_ACCESS_TOKEN,
+    server: 'sandbox'
+});
 
 export const auth = betterAuth({
     database: drizzleAdapter(db, {
@@ -35,7 +42,25 @@ export const auth = betterAuth({
             clientSecret: process.env.GITHUB_CLIENT_SECRET as string, 
         }, 
     },
-    plugins: [nextCookies()]
+    plugins: [nextCookies(), polar({
+        client: polarClient,
+        createCustomerOnSignUp: true,
+        use: [
+            portal(),
+            usage(),
+            webhooks({
+                secret: process.env.WEBHOOK_SECRET as string,
+                onPayload: (payload) => {
+                    console.log(payload)
+                    return Promise.resolve()
+                },
+                onOrderPaid: (payload) => {
+                    console.log("Orden pagada:", payload)
+                    return Promise.resolve()
+                }
+            })
+        ]
+    })]
 } satisfies BetterAuthOptions);
 
 export const getServerSession = cache(
