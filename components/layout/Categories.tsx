@@ -4,6 +4,7 @@ import React from 'react'
 import {CategoryCard} from "@/components/Marketplace/CategoryCard";
 import {useQuery} from "@tanstack/react-query";
 import {useTRPC} from "@/trpc/client";
+import {IconName} from "lucide-react/dynamic";
 
 const CategoriesSection = () => {
 
@@ -31,7 +32,7 @@ const CategoriesSection = () => {
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {categories.map((category) => (
-                    <CategoryCard serviceCount={category.servicesCount} key={category.name} {...category} />
+                    <CategoryCard serviceCount={category.servicesCount} key={category.name} {...category} icon={category.icon as IconName} />
                 ))}
             </div>
         </div>
