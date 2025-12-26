@@ -105,14 +105,19 @@ export const profiles = pgTable("profiles", {
     bio: text("bio"),
     avatarUrl: text("avatar_url"),
     createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at")
 });
-
 
 // Categories
 export const categories = pgTable("categories", {
     id: uuid("id").defaultRandom().primaryKey(),
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
+    description: text("description").notNull(),
+    icon: text("icon"),
+    color: text("color"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at")
 });
 
 // Services
