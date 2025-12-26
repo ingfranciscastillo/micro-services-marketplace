@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import {pgTable, text, timestamp, boolean, index, integer} from "drizzle-orm/pg-core";
+import {pgTable, text, timestamp, boolean, index, integer, uuid} from "drizzle-orm/pg-core";
 
 // Better Auth tables
 export const user = pgTable("user", {
@@ -92,3 +92,66 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+// Custom tables
+
+// Profile
+export const profiles = pgTable("profiles", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+        .notNull()
+        .references(() => user.id, { onDelete: "cascade" }),
+    displayName: text("display_name").notNull(),
+    bio: text("bio"),
+    avatarUrl: text("avatar_url"),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
+
+// Categories
+export const categories = pgTable("categories", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull().unique(),
+});
+
+// Services
+export const services = pgTable("services", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    sellerId: uuid("seller_id")
+        .references(() => profiles.id)
+        .notNull(),
+    categoryId: uuid("category_id")
+        .references(() => categories.id)
+        .notNull(),
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+    price: integer("price").notNull(),
+    isActive: integer("is_active").default(1),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
+// orders
+export const orders = pgTable("orders", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    buyerId: uuid("buyer_id")
+        .references(() => profiles.id)
+        .notNull(),
+    status: text("status").notNull(),
+    // pending | paid | completed | cancelled
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
+// reviews
+
+export const reviews = pgTable("reviews", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    serviceId: uuid("service_id")
+        .references(() => services.id)
+        .notNull(),
+    authorId: uuid("author_id")
+        .references(() => profiles.id)
+        .notNull(),
+    rating: integer("rating").notNull(), // 1-5
+    comment: text("comment"),
+});
