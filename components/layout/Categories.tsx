@@ -5,20 +5,16 @@ import {CategoryCard} from "@/components/Marketplace/CategoryCard";
 import {useQuery} from "@tanstack/react-query";
 import {useTRPC} from "@/trpc/client";
 import {IconName} from "lucide-react/dynamic";
+import {CategoriesSkeletonGrid} from "@/components/Marketplace/CategoriesSkeletonGrid";
+import {CategoriesGrid} from "@/components/Marketplace/CategoriesGrid";
 
 const CategoriesSection = () => {
 
     const trpc = useTRPC()
 
-    const {data: categories, isLoading} = useQuery(trpc.categories.getAll.queryOptions())
-
-    if(isLoading) {
-        return (
-            <p>Loading...</p>
-        )
-    }
-
-    if(!categories) return null
+    const {data: popularCategories = [], isLoading} = useQuery(trpc.categories.getPopular.queryOptions({
+        limit: 6
+    }))
 
     return (
     <section className="py-20 bg-secondary/30">
@@ -30,11 +26,23 @@ const CategoriesSection = () => {
                 </p>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {categories.map((category) => (
-                    <CategoryCard serviceCount={category.servicesCount} key={category.name} {...category} icon={category.icon as IconName} />
-                ))}
-            </div>
+            {isLoading ? (
+                <CategoriesSkeletonGrid gridClassName={"sm:grid-cols-2 lg:grid-cols-3"} count={6} />
+            ) : (
+                <CategoriesGrid className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {popularCategories.map((category) => (
+                        <CategoryCard
+                            key={category.id}
+                            name={category.name}
+                            slug={category.slug}
+                            description={category.description}
+                            color={category.color}
+                            serviceCount={category.servicesCount}
+                            icon={category.icon as IconName}
+                        />
+                    ))}
+                </CategoriesGrid>
+            )}
         </div>
     </section>
     )

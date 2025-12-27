@@ -1,13 +1,21 @@
 import {z} from "zod";
 import {protectedProcedure, publicProcedure, createTRPCRouter} from "../init"
 import {services} from "@/lib/db/schema";
-import {eq, desc} from "drizzle-orm";
+import {eq, desc, sql, count} from "drizzle-orm";
 
 export const servicesRouter = createTRPCRouter({
     list: publicProcedure.query( async ({ctx}) => {
         return await ctx.db.select().from(services).where(
             eq(services.isActive, 1)
         ).orderBy(desc(services.createdAt))
+    }),
+
+    count: publicProcedure.query(async ({ctx}) => {
+        const result = await ctx.db
+            .select({ count: sql<number>`count(*)` })
+            .from(services);
+
+        return result[0].count;
     }),
 
     create: protectedProcedure.input(

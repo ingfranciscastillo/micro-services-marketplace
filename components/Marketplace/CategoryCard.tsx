@@ -20,7 +20,7 @@ export function CategoryCard({
   color,
 }: CategoryCardProps) {
   return (
-    <Link href={`/categories/${slug}`} passHref>
+    <Link href={`/category/${slug}`} passHref className={"hover:-translate-y-2 transition duration-300"}>
       <Card className="h-full">
         <CardContent className="p-6">
           <div

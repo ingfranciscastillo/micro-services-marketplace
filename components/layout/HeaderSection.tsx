@@ -5,23 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowRight, Code2, Gauge, Search, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FloatingCards from "@/components/layout/FloatingServiceCards";
-
-const exampleCode = `// Install the DevHub SDK
-npm install @devhub/sdk
-
-// Use any microservice in seconds
-import { AITextAnalyzer } from '@devhub/sdk';
-
-const analyzer = new AITextAnalyzer({
-  apiKey: process.env.DEVHUB_KEY
-});
-
-const result = await analyzer.analyze({
-  text: "This product exceeded my expectations!",
-  features: ['sentiment', 'entities']
-});
-
-console.log(result.sentiment); // { score: 0.92, label: 'positive' }`;
+import Link from "next/link";
 
 const HeaderSection = () => {
   return (
@@ -55,10 +39,12 @@ const HeaderSection = () => {
                   className="pl-12 h-14 text-base rounded-xl border-2 focus:border-primary"
                 />
               </div>
-              <Button variant="default" size="lg" className={"h-14"}>
-                Explorar servicios
-                <ArrowRight className="h-5 w-5" />
-              </Button>
+              <Link href={"/marketplace"}>
+                <Button variant="default" size="lg" className={"h-14"}>
+                  Explorar servicios
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </Link>
             </div>
 
             {/* Trust badges */}

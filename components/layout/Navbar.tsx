@@ -14,6 +14,7 @@ import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 
 const navLinks = [
   { label: "Explore", href: "/marketplace" },
+  {label: "Categories", href: "/categories"},
   { label: "Pricing", href: "/pricing" },
   { label: "Docs", href: "/docs" },
 ];
