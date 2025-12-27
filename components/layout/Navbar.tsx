@@ -13,7 +13,7 @@ import { authClient } from "@/lib/auth/auth-client";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
 
 const navLinks = [
-  { label: "Explore", href: "/marketplace" },
+  { label: "Explore", href: "/explore" },
   {label: "Categories", href: "/categories"},
   { label: "Pricing", href: "/pricing" },
   { label: "Docs", href: "/docs" },

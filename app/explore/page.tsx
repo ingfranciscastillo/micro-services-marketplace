@@ -14,134 +14,11 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {Sheet, SheetContent, SheetHeader, SheetTrigger} from "@/components/ui/sheet";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 
-const allServices = [
-    {
-        id: "1",
-        name: "AI Text Analyzer",
-        description: "Advanced NLP service for sentiment analysis, entity extraction, and text classification.",
-        price: 29,
-        rating: 4.9,
-        reviews: 234,
-        downloads: 12500,
-        category: "AI/ML",
-        tags: ["NLP", "Sentiment", "REST API"],
-        author: { name: "AILabs" },
-        featured: true,
-    },
-    {
-        id: "2",
-        name: "Email Service Pro",
-        description: "Reliable transactional email API with templates, analytics, and high deliverability.",
-        price: 19,
-        rating: 4.8,
-        reviews: 567,
-        downloads: 45000,
-        category: "Communication",
-        tags: ["Email", "SMTP", "Templates"],
-        author: { name: "MailForge" },
-    },
-    {
-        id: "3",
-        name: "Stripe Payment Gateway",
-        description: "Pre-built payment flow with subscriptions, invoicing, and webhook handling.",
-        price: 0,
-        rating: 4.9,
-        reviews: 892,
-        downloads: 78000,
-        category: "Payments",
-        tags: ["Stripe", "Payments", "Subscriptions"],
-        author: { name: "PayStack" },
-        featured: true,
-    },
-    {
-        id: "4",
-        name: "Image Optimizer API",
-        description: "Compress, resize, and convert images on-the-fly with WebP and AVIF support.",
-        price: 15,
-        rating: 4.7,
-        reviews: 189,
-        downloads: 23000,
-        category: "Media",
-        tags: ["Images", "CDN", "Optimization"],
-        author: { name: "MediaFlow" },
-    },
-    {
-        id: "5",
-        name: "Auth0 Wrapper",
-        description: "Simplified authentication with SSO, MFA, and social login built-in.",
-        price: 39,
-        rating: 4.8,
-        reviews: 456,
-        downloads: 34000,
-        category: "Authentication",
-        tags: ["Auth", "SSO", "OAuth"],
-        author: { name: "SecureID" },
-    },
-    {
-        id: "6",
-        name: "Database Backup Bot",
-        description: "Automated backups for PostgreSQL, MySQL, and MongoDB with S3 integration.",
-        price: 12,
-        rating: 4.6,
-        reviews: 123,
-        downloads: 8900,
-        category: "DevOps",
-        tags: ["Backup", "Database", "Automation"],
-        author: { name: "DevTools Co" },
-    },
-    {
-        id: "7",
-        name: "PDF Generator API",
-        description: "Generate PDFs from HTML templates with custom fonts, images, and styling.",
-        price: 25,
-        rating: 4.7,
-        reviews: 312,
-        downloads: 18500,
-        category: "Documents",
-        tags: ["PDF", "Templates", "Export"],
-        author: { name: "DocuForge" },
-    },
-    {
-        id: "8",
-        name: "GPT-4 Wrapper",
-        description: "Simplified OpenAI integration with prompt templates and response caching.",
-        price: 49,
-        rating: 4.9,
-        reviews: 678,
-        downloads: 52000,
-        category: "AI/ML",
-        tags: ["GPT-4", "OpenAI", "LLM"],
-        author: { name: "AI Solutions" },
-        featured: true,
-    },
-    {
-        id: "9",
-        name: "Webhook Relay",
-        description: "Forward, transform, and retry webhooks with detailed logging and debugging.",
-        price: 9,
-        rating: 4.5,
-        reviews: 89,
-        downloads: 6700,
-        category: "Infrastructure",
-        tags: ["Webhooks", "API", "Relay"],
-        author: { name: "HookMaster" },
-    },
-];
-
-const categories = [
-    "All Categories",
-    "AI/ML",
-    "Authentication",
-    "Communication",
-    "DevOps",
-    "Documents",
-    "Infrastructure",
-    "Media",
-    "Payments",
-];
+import {useQuery} from "@tanstack/react-query";
+import {useTRPC} from "@/trpc/client";
 
 const priceRanges = [
     { label: "Free", value: "free" },
@@ -151,6 +28,20 @@ const priceRanges = [
 ];
 
 function FilterSidebar({ className }: { className?: string }) {
+
+    const trpc = useTRPC()
+
+    const {data: categories, isLoading: categoryLoading} = useQuery(trpc.categories.getAll.queryOptions())
+
+
+    if(categoryLoading) {
+        return (
+            <p>Loading...</p>
+        )
+    }
+
+    if(!categories) return null
+
     return (
         <div className={className}>
             <div className="space-y-6">
@@ -163,8 +54,8 @@ function FilterSidebar({ className }: { className?: string }) {
                         </SelectTrigger>
                         <SelectContent>
                             {categories.map((cat) => (
-                                <SelectItem key={cat} value={cat}>
-                                    {cat}
+                                <SelectItem key={cat.id} value={cat.name}>
+                                    {cat.name}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -232,9 +123,23 @@ function FilterSidebar({ className }: { className?: string }) {
     );
 }
 
-export default function Marketplace() {
-    const [searchQuery, setSearchQuery] = useState("");
+export default function Explore() {
 
+    const trpc = useTRPC();
+
+    const [searchQuery, setSearchQuery] = useState("");
+    const {data: services, isLoading: servicesLoading} = useQuery(trpc.services.getAll.queryOptions({
+        limit: 12,
+        offset: 0,
+    }))
+
+    if(servicesLoading) {
+        return <div>Loading...</div>;
+    }
+
+    if(!services) return null;
+
+    // @ts-ignore
     return (
         <div className="min-h-screen flex flex-col">
             <Navbar />
@@ -284,8 +189,12 @@ export default function Marketplace() {
                                     </Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="w-80">
-                                    <h2 className="font-semibold text-lg mb-6">Filters</h2>
-                                    <FilterSidebar />
+                                    <SheetHeader>
+                                        <h2 className="font-semibold text-lg mb-6">Filters</h2>
+                                    </SheetHeader>
+                                    <div className={"px-4"}>
+                                        <FilterSidebar />
+                                    </div>
                                 </SheetContent>
                             </Sheet>
                         </div>
@@ -315,8 +224,8 @@ export default function Marketplace() {
                         {/* Grid */}
                         <div className="flex-1">
                             <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                                {allServices.map((service) => (
-                                    <ServiceCard key={service.id} {...service} />
+                                {services.map((service) => (
+                                    <ServiceCard reviewsCount={service.reviewCount} key={service.id} {...service} />
                                 ))}
                             </div>
 

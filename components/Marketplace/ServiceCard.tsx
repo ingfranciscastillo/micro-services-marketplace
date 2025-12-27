@@ -9,10 +9,10 @@ export interface ServiceCardProps {
     title: string;
     description: string;
     price: number;
-    rating: number;
-    reviewsCount: number;
-    authorName: string;
-    authorImage: string;
+    rating?: number;
+    reviewsCount?: number;
+    authorName?: string | null;
+    authorImage?: string | null;
 }
 
 export function ServiceCard({
@@ -52,7 +52,7 @@ export function ServiceCard({
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                             <Star className="h-4 w-4 fill-warning text-warning"/>
-                            <span className="text-sm font-medium">{rating.toFixed(1)}</span>
+                            <span className="text-sm font-medium">{rating}</span>
                             <span className="text-xs text-muted-foreground">({reviewsCount})</span>
                         </div>
                     </div>
@@ -60,9 +60,9 @@ export function ServiceCard({
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
-                                <AvatarImage src={authorImage}/>
+                                <AvatarImage src={authorImage ?? ""}/>
                                 <AvatarFallback className="text-xs bg-secondary">
-                                    {authorName.slice(0, 2).toUpperCase()}
+                                    {authorName?.slice(0, 2)?.toUpperCase()}
                                 </AvatarFallback>
                             </Avatar>
                             <span className="text-xs text-muted-foreground">{authorName}</span>

@@ -4,10 +4,38 @@ import {categories, profiles, reviews, services} from "@/lib/db/schema";
 import {eq, desc, sql, inArray} from "drizzle-orm";
 
 export const servicesRouter = createTRPCRouter({
-    list: publicProcedure.query( async ({ctx}) => {
-        return await ctx.db.select().from(services).where(
-            eq(services.isActive, 1)
-        ).orderBy(desc(services.createdAt))
+    getAll: publicProcedure.input(
+        z.object({
+            limit: z.number().min(1).max(50).default(24),
+            offset: z.number().min(0).default(0),
+        })
+    ).query( async ({ctx, input}) => {
+        const { limit, offset } = input;
+
+        return await ctx.db.select({
+            id: services.id,
+            title: services.title,
+            description: services.description,
+            price: services.price,
+            createdAt: services.createdAt,
+
+            authorName: profiles.displayName,
+            authorImage: profiles.avatarUrl,
+
+            reviewCount: sql<number>`COUNT(${reviews.id})`,
+            rating: sql<number>`COALESCE(AVG(${reviews.rating}), 0)`,
+        }).from(services)
+            .leftJoin(profiles, eq(services.sellerId, profiles.id))
+            .leftJoin(reviews, eq(reviews.serviceId, services.id))
+            .groupBy(
+                services.id,
+                profiles.displayName,
+                profiles.avatarUrl
+            )
+            .orderBy(desc(services.createdAt))
+            .limit(limit)
+            .offset(offset)
+
     }),
 
     byCategory: publicProcedure
@@ -61,7 +89,6 @@ export const servicesRouter = createTRPCRouter({
             }));
         }),
 
-
     count: publicProcedure.query(async ({ctx}) => {
         const result = await ctx.db
             .select({ count: sql<number>`count(*)` })
@@ -88,18 +115,5 @@ export const servicesRouter = createTRPCRouter({
             price: input.price,
         })
     }),
-
-    getReviews: publicProcedure
-        .input(
-            z.object({
-                serviceId: z.uuid(),
-            })
-        )
-        .query(async ({ ctx, input }) => {
-            return ctx.db.query.reviews.findMany({
-                where: eq(reviews.serviceId, input.serviceId),
-                orderBy: (reviews, { desc }) => [desc(reviews.createdAt)],
-            });
-        }),
 
 })
