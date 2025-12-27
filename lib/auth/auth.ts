@@ -6,7 +6,6 @@ import { db } from "@/lib/db"; // your drizzle instance
 import { nextCookies } from "better-auth/next-js";
 import {polar, portal, usage, webhooks} from "@polar-sh/better-auth"
 import {Polar} from "@polar-sh/sdk"
-import {createAuthMiddleware} from "@better-auth/core/api";
 import {profiles} from "@/lib/db/schema";
 
 const polarClient = new Polar({
@@ -26,7 +25,6 @@ export const auth = betterAuth({
                         userId: user.id,
                         displayName: user.name,
                         avatarUrl: user.image,
-
                     })
                 }
             }

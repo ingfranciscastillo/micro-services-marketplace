@@ -5,7 +5,7 @@ import {useParams} from "next/navigation";
 import { useState, useMemo } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { ServiceCard, ServiceCardProps } from "@/components/marketplace/ServiceCard";
+import { ServiceCard } from "@/components/marketplace/ServiceCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,77 +18,21 @@ import {
     List,
     ArrowLeft,
     Bot,
-    CreditCard,
-    Mail,
-    Database,
-    Cloud,
-    Webhook,
-    Shield,
-    FileCode,
-    BarChart3,
-    Image,
-    Globe,
-    Lock,
     Star,
     X
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
-// Category metadata
-const categoryMeta: Record<string, { name: string; description: string; icon: React.ElementType; color: string }> = {
-    ai: { name: "AI & Machine Learning", description: "NLP, computer vision, predictive models, and AI-powered APIs", icon: Bot, color: "#8B5CF6" },
-    payments: { name: "Payment Processing", description: "Stripe, PayPal, crypto integrations, and billing solutions", icon: CreditCard, color: "#10B981" },
-    communication: { name: "Email & Messaging", description: "Transactional emails, SMS APIs, and push notifications", icon: Mail, color: "#F59E0B" },
-    database: { name: "Database & Storage", description: "ORMs, backups, file storage, and caching solutions", icon: Database, color: "#3B82F6" },
-    cloud: { name: "Cloud Infrastructure", description: "AWS, GCP, Azure, and serverless deployment tools", icon: Cloud, color: "#EC4899" },
-    webhooks: { name: "Webhooks & APIs", description: "API gateways, webhook handlers, and integrations", icon: Webhook, color: "#6366F1" },
-    auth: { name: "Authentication", description: "OAuth, SSO, MFA, and identity management", icon: Shield, color: "#14B8A6" },
-    codegen: { name: "Code Generation", description: "Code formatters, linters, and documentation generators", icon: FileCode, color: "#F97316" },
-    analytics: { name: "Analytics & Monitoring", description: "Usage tracking, error monitoring, and performance metrics", icon: BarChart3, color: "#EF4444" },
-    media: { name: "Media Processing", description: "Image optimization, video encoding, and file conversion", icon: Image, color: "#A855F7" },
-    localization: { name: "Localization", description: "Translation APIs, i18n tools, and currency conversion", icon: Globe, color: "#0EA5E9" },
-    security: { name: "Security", description: "Encryption, vulnerability scanning, and threat detection", icon: Lock, color: "#DC2626" },
-};
-
-// Mock services data
-const allServices: ServiceCardProps[] = [
-    { id: "1", name: "GPT-4 API Wrapper", description: "Simplified access to OpenAI's GPT-4 with built-in rate limiting, caching, and prompt templates.", price: 29, rating: 4.9, reviews: 234, downloads: 12500, category: "ai", tags: ["AI", "NLP", "GPT-4"], author: { name: "AI Labs" }, featured: true },
-    { id: "2", name: "Sentiment Analyzer", description: "Real-time sentiment analysis for social media, reviews, and customer feedback.", price: 15, rating: 4.7, reviews: 189, downloads: 8700, category: "ai", tags: ["AI", "NLP", "Sentiment"], author: { name: "TextMind" } },
-    { id: "3", name: "Image Recognition API", description: "Object detection, face recognition, and image classification using deep learning.", price: 35, rating: 4.8, reviews: 312, downloads: 15200, category: "ai", tags: ["AI", "Vision", "ML"], author: { name: "VisionAI" }, featured: true },
-    { id: "4", name: "Voice-to-Text Pro", description: "High-accuracy speech recognition with support for 50+ languages.", price: 25, rating: 4.6, reviews: 156, downloads: 9800, category: "ai", tags: ["AI", "Speech", "Transcription"], author: { name: "AudioTech" } },
-    { id: "5", name: "ML Model Trainer", description: "AutoML platform for training custom models without code.", price: 49, rating: 4.5, reviews: 98, downloads: 4500, category: "ai", tags: ["AI", "AutoML", "Training"], author: { name: "DataForge" } },
-    { id: "6", name: "Stripe Payment Gateway", description: "Pre-built payment flow with subscriptions, invoicing, and webhook handling.", price: 0, rating: 4.9, reviews: 892, downloads: 78000, category: "payments", tags: ["Stripe", "Payments", "Subscriptions"], author: { name: "PayStack" }, featured: true },
-    { id: "7", name: "PayPal Integration Kit", description: "Complete PayPal integration with checkout, refunds, and disputes handling.", price: 19, rating: 4.7, reviews: 445, downloads: 32000, category: "payments", tags: ["PayPal", "Payments", "Checkout"], author: { name: "PayFlow" } },
-    { id: "8", name: "Crypto Payment Gateway", description: "Accept Bitcoin, Ethereum, and 20+ cryptocurrencies seamlessly.", price: 39, rating: 4.4, reviews: 87, downloads: 5600, category: "payments", tags: ["Crypto", "Bitcoin", "Payments"], author: { name: "CryptoGate" } },
-    { id: "9", name: "Email Service Pro", description: "Reliable transactional email API with templates, analytics, and high deliverability.", price: 19, rating: 4.8, reviews: 567, downloads: 45000, category: "communication", tags: ["Email", "SMTP", "Templates"], author: { name: "MailForge" } },
-    { id: "10", name: "SMS Gateway", description: "Global SMS delivery with two-way messaging and shortcode support.", price: 12, rating: 4.6, reviews: 234, downloads: 18000, category: "communication", tags: ["SMS", "Messaging", "OTP"], author: { name: "TextBlast" } },
-    { id: "11", name: "Push Notification Hub", description: "Cross-platform push notifications for iOS, Android, and web.", price: 15, rating: 4.7, reviews: 178, downloads: 14500, category: "communication", tags: ["Push", "Notifications", "Mobile"], author: { name: "PushPro" } },
-    { id: "12", name: "PostgreSQL Manager", description: "Database migrations, backups, and query optimization tools.", price: 22, rating: 4.8, reviews: 289, downloads: 21000, category: "database", tags: ["PostgreSQL", "Database", "Migrations"], author: { name: "DBTools" } },
-    { id: "13", name: "Redis Cache Layer", description: "High-performance caching with automatic key management and clustering.", price: 18, rating: 4.7, reviews: 198, downloads: 16800, category: "database", tags: ["Redis", "Cache", "Performance"], author: { name: "CacheFlow" } },
-    { id: "14", name: "S3 Storage Helper", description: "Simplified AWS S3 operations with presigned URLs and CDN integration.", price: 14, rating: 4.6, reviews: 312, downloads: 28000, category: "database", tags: ["S3", "Storage", "CDN"], author: { name: "CloudFiles" } },
-    { id: "15", name: "Serverless Deploy", description: "One-click deployment to AWS Lambda, Vercel, and Cloudflare Workers.", price: 29, rating: 4.8, reviews: 456, downloads: 35000, category: "cloud", tags: ["Serverless", "Deploy", "AWS"], author: { name: "DeployKit" }, featured: true },
-    { id: "16", name: "Kubernetes Manager", description: "Simplified K8s cluster management with auto-scaling and monitoring.", price: 45, rating: 4.5, reviews: 123, downloads: 8900, category: "cloud", tags: ["Kubernetes", "DevOps", "Containers"], author: { name: "K8sTools" } },
-    { id: "17", name: "Webhook Relay", description: "Forward, transform, and retry webhooks with detailed logging.", price: 9, rating: 4.5, reviews: 89, downloads: 6700, category: "webhooks", tags: ["Webhooks", "API", "Relay"], author: { name: "HookMaster" } },
-    { id: "18", name: "API Gateway Pro", description: "Rate limiting, authentication, and request routing for APIs.", price: 35, rating: 4.7, reviews: 234, downloads: 18500, category: "webhooks", tags: ["API", "Gateway", "Security"], author: { name: "APIForge" } },
-    { id: "19", name: "Auth0 Wrapper", description: "Simplified authentication with SSO, MFA, and social login built-in.", price: 39, rating: 4.8, reviews: 456, downloads: 34000, category: "auth", tags: ["Auth", "SSO", "OAuth"], author: { name: "SecureID" } },
-    { id: "20", name: "JWT Manager", description: "Token generation, validation, and refresh flow implementation.", price: 12, rating: 4.6, reviews: 167, downloads: 12300, category: "auth", tags: ["JWT", "Auth", "Tokens"], author: { name: "TokenFlow" } },
-    { id: "21", name: "Code Formatter API", description: "Format code in 30+ languages with customizable style rules.", price: 8, rating: 4.5, reviews: 89, downloads: 5600, category: "codegen", tags: ["Formatter", "Code", "Linting"], author: { name: "CodeStyle" } },
-    { id: "22", name: "API Doc Generator", description: "Generate OpenAPI specs and documentation from code automatically.", price: 19, rating: 4.7, reviews: 145, downloads: 9800, category: "codegen", tags: ["Docs", "OpenAPI", "Generator"], author: { name: "DocForge" } },
-    { id: "23", name: "Analytics Dashboard", description: "Real-time analytics with custom events, funnels, and cohorts.", price: 29, rating: 4.8, reviews: 312, downloads: 24500, category: "analytics", tags: ["Analytics", "Metrics", "Dashboard"], author: { name: "MetricsHub" }, featured: true },
-    { id: "24", name: "Error Tracker", description: "Exception monitoring with stack traces, alerts, and integrations.", price: 15, rating: 4.7, reviews: 234, downloads: 19800, category: "analytics", tags: ["Errors", "Monitoring", "Alerts"], author: { name: "BugWatch" } },
-    { id: "25", name: "Image Optimizer", description: "Compress, resize, and convert images on-the-fly with WebP support.", price: 15, rating: 4.7, reviews: 189, downloads: 23000, category: "media", tags: ["Images", "CDN", "Optimization"], author: { name: "MediaFlow" } },
-    { id: "26", name: "Video Encoder", description: "Transcode videos to multiple formats with thumbnail generation.", price: 35, rating: 4.6, reviews: 98, downloads: 7800, category: "media", tags: ["Video", "Encoding", "Transcoding"], author: { name: "VideoKit" } },
-    { id: "27", name: "Translation API", description: "Neural machine translation for 100+ language pairs.", price: 22, rating: 4.8, reviews: 234, downloads: 18500, category: "localization", tags: ["Translation", "i18n", "NLP"], author: { name: "LangBridge" } },
-    { id: "28", name: "Currency Converter", description: "Real-time exchange rates with historical data and crypto support.", price: 9, rating: 4.5, reviews: 123, downloads: 8900, category: "localization", tags: ["Currency", "Forex", "API"], author: { name: "RateFlow" } },
-    { id: "29", name: "Encryption Toolkit", description: "AES, RSA, and hash functions with key management.", price: 25, rating: 4.8, reviews: 189, downloads: 14500, category: "security", tags: ["Encryption", "Security", "Crypto"], author: { name: "CryptoLib" } },
-    { id: "30", name: "Vulnerability Scanner", description: "Automated security scanning for dependencies and code.", price: 45, rating: 4.7, reviews: 156, downloads: 11200, category: "security", tags: ["Security", "Scanning", "Vulnerabilities"], author: { name: "SecureScan" } },
-];
+import { DynamicIcon, IconName } from "lucide-react/dynamic";
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
 
 const priceRanges = [
     { value: "free", label: "Free", min: 0, max: 0 },
-    { value: "under-20", label: "Under $20", min: 1, max: 19 },
-    { value: "20-50", label: "$20 - $50", min: 20, max: 50 },
-    { value: "over-50", label: "Over $50", min: 51, max: Infinity },
+    { value: "0-25", label: "$0 – $25", min: 0, max: 25 },
+    { value: "25-50", label: "$25 – $50", min: 25, max: 50 },
+    { value: "50-100", label: "$50 – $100", min: 50, max: 100 },
+    { value: "100+", label: "$100+", min: 100, max: Infinity },
 ];
 
 const sortOptions = [
@@ -100,74 +44,90 @@ const sortOptions = [
 ];
 
 const CategoryDetail = () => {
-    const { slug } = useParams<{ slug: string }>();
+    const params = useParams();
     const [searchQuery, setSearchQuery] = useState("");
-    const [sortBy, setSortBy] = useState("popular");
+    const [sortBy, setSortBy] = useState<
+        "popular" | "rating" | "newest" | "price-low" | "price-high"
+    >("popular");
     const [selectedPrices, setSelectedPrices] = useState<string[]>([]);
     const [minRating, setMinRating] = useState<number>(0);
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-    const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
 
-    const category = categoryMeta[slug || ""] || null;
-    const CategoryIcon = category?.icon || Bot;
+    const trpc = useTRPC();
+
+    const slug = Array.isArray(params.slug)
+        ? params.slug[0]
+        : params.slug;
+
+    if (!slug) return null;
+
+    const { data: category, isLoading: categoryLoading } =
+        useQuery(trpc.categories.getBySlug.queryOptions({ slug }));
+
+    const { data: services = [], isLoading: servicesLoading } =
+        useQuery(trpc.services.byCategory.queryOptions({ slug }));
+
+    const CategoryIcon = DynamicIcon;
 
     // Filter services
     const filteredServices = useMemo(() => {
-        let services = allServices.filter(s => s.category === slug);
+        let result = [...services];
 
-        // Search filter
+        // 🔍 Search
         if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            services = services.filter(s =>
-                s.name.toLowerCase().includes(query) ||
-                s.description.toLowerCase().includes(query) ||
-                s.tags.some(t => t.toLowerCase().includes(query))
+            const q = searchQuery.toLowerCase();
+            result = result.filter(
+                s =>
+                    s.title.toLowerCase().includes(q) ||
+                    s.description.toLowerCase().includes(q)
             );
         }
 
-        // Price filter
+        // 💰 Price
         if (selectedPrices.length > 0) {
-            services = services.filter(s => {
-                return selectedPrices.some(priceRange => {
-                    const range = priceRanges.find(r => r.value === priceRange);
+            result = result.filter(service =>
+                selectedPrices.some(value => {
+                    const range = priceRanges.find(r => r.value === value);
                     if (!range) return false;
-                    if (range.value === "free") return s.price === 0;
-                    return s.price >= range.min && s.price <= range.max;
-                });
-            });
+                    return service.price >= range.min && service.price <= range.max;
+                })
+            );
         }
 
-        // Rating filter
+        // ⭐ Rating
         if (minRating > 0) {
-            services = services.filter(s => s.rating >= minRating);
+            result = result.filter(s => s.rating >= minRating);
         }
 
-        // Featured filter
-        if (showFeaturedOnly) {
-            services = services.filter(s => s.featured);
-        }
-
-        // Sort
+        // 🔃 Sort
         switch (sortBy) {
             case "popular":
-                services.sort((a, b) => b.downloads - a.downloads);
+                result.sort((a, b) => b.reviewsCount - a.reviewsCount);
                 break;
+
             case "rating":
-                services.sort((a, b) => b.rating - a.rating);
+                result.sort((a, b) => b.rating - a.rating);
                 break;
+
             case "newest":
-                services.sort((a, b) => parseInt(b.id) - parseInt(a.id));
+                result.sort(
+                    (a, b) =>
+                        new Date(b.createdAt).getTime() -
+                        new Date(a.createdAt).getTime()
+                );
                 break;
+
             case "price-low":
-                services.sort((a, b) => a.price - b.price);
+                result.sort((a, b) => a.price - b.price);
                 break;
+
             case "price-high":
-                services.sort((a, b) => b.price - a.price);
+                result.sort((a, b) => b.price - a.price);
                 break;
         }
 
-        return services;
-    }, [slug, searchQuery, selectedPrices, minRating, sortBy, showFeaturedOnly]);
+        return result;
+    }, [services, searchQuery, selectedPrices, minRating, sortBy]);
 
     const togglePriceFilter = (value: string) => {
         setSelectedPrices(prev =>
@@ -181,11 +141,14 @@ const CategoryDetail = () => {
         setSearchQuery("");
         setSelectedPrices([]);
         setMinRating(0);
-        setShowFeaturedOnly(false);
         setSortBy("popular");
     };
 
-    const hasActiveFilters = searchQuery || selectedPrices.length > 0 || minRating > 0 || showFeaturedOnly;
+    const hasActiveFilters = searchQuery || selectedPrices.length > 0 || minRating > 0;
+
+    if (categoryLoading || servicesLoading) {
+        return <div>Loading...</div>;
+    }
 
     if (!category) {
         return (
@@ -213,7 +176,7 @@ const CategoryDetail = () => {
                             <Checkbox
                                 id={range.value}
                                 checked={selectedPrices.includes(range.value)}
-                                onCheckedChange={() => togglePriceFilter(range.value)}
+                                onClick={() => togglePriceFilter(range.value)}
                             />
                             <label
                                 htmlFor={range.value}
@@ -240,23 +203,6 @@ const CategoryDetail = () => {
                         <SelectItem value="4.8">4.8+ stars</SelectItem>
                     </SelectContent>
                 </Select>
-            </div>
-
-            {/* Featured filter */}
-            <div>
-                <div className="flex items-center gap-2">
-                    <Checkbox
-                        id="featured"
-                        checked={showFeaturedOnly}
-                        onCheckedChange={(checked) => setShowFeaturedOnly(checked === true)}
-                    />
-                    <label
-                        htmlFor="featured"
-                        className="text-sm text-muted-foreground cursor-pointer"
-                    >
-                        Featured only
-                    </label>
-                </div>
             </div>
 
             {/* Clear filters */}
@@ -294,7 +240,11 @@ const CategoryDetail = () => {
                             className="p-4 rounded-2xl"
                             style={{ backgroundColor: `${category.color}20` }}
                         >
-                            <CategoryIcon className="h-8 w-8" style={{ color: category.color }} />
+                            <CategoryIcon
+                                name={category.icon as IconName}
+                                className="h-8 w-8"
+                                style={{ color: category.color }}
+                            />
                         </div>
                         <div>
                             <h1 className="text-3xl font-bold">{category.name}</h1>
@@ -355,7 +305,12 @@ const CategoryDetail = () => {
                                     </SheetContent>
                                 </Sheet>
 
-                                <Select value={sortBy} onValueChange={setSortBy}>
+                                <Select
+                                    value={sortBy}
+                                    onValueChange={(value) =>
+                                        setSortBy(value as "popular" | "rating" | "newest" | "price-low" | "price-high")
+                                    }
+                                >
                                     <SelectTrigger className="w-[180px]">
                                         <SelectValue placeholder="Sort by" />
                                     </SelectTrigger>
@@ -367,6 +322,7 @@ const CategoryDetail = () => {
                                         ))}
                                     </SelectContent>
                                 </Select>
+
 
                                 <div className="hidden sm:flex border rounded-lg">
                                     <Button
@@ -412,14 +368,6 @@ const CategoryDetail = () => {
                                     <Badge variant="secondary" className="flex items-center gap-1">
                                         <Star className="h-3 w-3" /> {minRating}+
                                         <button onClick={() => setMinRating(0)}>
-                                            <X className="h-3 w-3" />
-                                        </button>
-                                    </Badge>
-                                )}
-                                {showFeaturedOnly && (
-                                    <Badge variant="secondary" className="flex items-center gap-1">
-                                        Featured only
-                                        <button onClick={() => setShowFeaturedOnly(false)}>
                                             <X className="h-3 w-3" />
                                         </button>
                                     </Badge>

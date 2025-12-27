@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import {pgTable, text, timestamp, boolean, index, integer, uuid} from "drizzle-orm/pg-core";
+import {pgTable, text, timestamp, boolean, index, integer, uuid, real} from "drizzle-orm/pg-core";
 
 // Better Auth tables
 export const user = pgTable("user", {
@@ -132,6 +132,8 @@ export const services = pgTable("services", {
     title: text("title").notNull(),
     description: text("description").notNull(),
     price: integer("price").notNull(),
+    rating: real("rating").default(0),
+    reviewsCount: integer("reviews_count").default(0),
     isActive: integer("is_active").default(1),
     createdAt: timestamp("created_at").defaultNow(),
 });
@@ -148,7 +150,6 @@ export const orders = pgTable("orders", {
 });
 
 // reviews
-
 export const reviews = pgTable("reviews", {
     id: uuid("id").defaultRandom().primaryKey(),
     serviceId: uuid("service_id")
@@ -159,4 +160,5 @@ export const reviews = pgTable("reviews", {
         .notNull(),
     rating: integer("rating").notNull(), // 1-5
     comment: text("comment"),
+    createdAt: timestamp("created_at").defaultNow(),
 });

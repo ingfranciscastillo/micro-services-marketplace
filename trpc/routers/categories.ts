@@ -50,6 +50,20 @@ export const categoriesRouter = createTRPCRouter({
             .limit(1);
     }),
 
+    getBySlug: publicProcedure
+        .input(
+            z.object({
+                slug: z.string(),
+            })
+        )
+        .query(async ({ ctx, input }) => {
+            const category = await ctx.db.query.categories.findFirst({
+                where: eq(categories.slug, input.slug),
+            });
+
+            return category ?? null;
+        }),
+
     // Populares
     getPopular: publicProcedure
         .input(
