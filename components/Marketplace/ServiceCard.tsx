@@ -36,7 +36,6 @@ export function ServiceCard({
                             </div>
                             <div>
                                 <h3 className="font-semibold leading-tight">{title}</h3>
-
                             </div>
                         </div>
                     </div>

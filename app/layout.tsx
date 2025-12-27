@@ -2,17 +2,17 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "./providers"
 import React from "react";
-import {Geist, Fira_Code, Lora } from "next/font/google"
+import {Plus_Jakarta_Sans, IBM_Plex_Mono, Lora } from "next/font/google"
 
-const geist = Geist({
+const plusJakartaSans = Plus_Jakarta_Sans({
     subsets: ["latin"],
-    variable: "--font-geist"
+    variable: "--font-plus-jakarta-sans",
 })
 
-const fira_code = Fira_Code({
+const IBMPlexMono = IBM_Plex_Mono({
     weight: "400",
     subsets: ["latin"],
-    variable: "--font-fira"
+    variable: "--font-ibm-plex-mono"
 })
 
 const lora = Lora({
@@ -32,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${geist.variable} ${lora.variable} ${fira_code.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${plusJakartaSans.variable} ${lora.variable} ${IBMPlexMono.variable}`}>
       <body
       >
       <Providers>

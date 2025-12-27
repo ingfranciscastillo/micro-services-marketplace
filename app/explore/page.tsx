@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
     Select,
-    SelectContent,
+    SelectContent, SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue
@@ -48,16 +48,16 @@ function FilterSidebar({ className }: { className?: string }) {
                 {/* Category filter */}
                 <div>
                     <h3 className="font-semibold mb-3">Category</h3>
-                    <Select defaultValue="All Categories">
+                    <Select>
                         <SelectTrigger>
                             <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                            {categories.map((cat) => (
-                                <SelectItem key={cat.id} value={cat.name}>
-                                    {cat.name}
-                                </SelectItem>
-                            ))}
+                                {categories.map((cat) => (
+                                    <SelectItem key={cat.id} value={cat.name}>
+                                        {cat.name}
+                                    </SelectItem>
+                                ))}
                         </SelectContent>
                     </Select>
                 </div>
@@ -94,24 +94,6 @@ function FilterSidebar({ className }: { className?: string }) {
                             <SelectItem value="3.5">3.5+ stars</SelectItem>
                         </SelectContent>
                     </Select>
-                </div>
-
-                {/* Features filter */}
-                <div>
-                    <h3 className="font-semibold mb-3">Features</h3>
-                    <div className="space-y-3">
-                        {["REST API", "GraphQL", "TypeScript SDK", "Free tier"].map((feature) => (
-                            <div key={feature} className="flex items-center gap-2">
-                                <Checkbox id={feature} />
-                                <label
-                                    htmlFor={feature}
-                                    className="text-sm text-muted-foreground cursor-pointer"
-                                >
-                                    {feature}
-                                </label>
-                            </div>
-                        ))}
-                    </div>
                 </div>
 
                 <Button variant="outline" className="w-full">
