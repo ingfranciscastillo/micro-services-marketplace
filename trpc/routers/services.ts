@@ -30,6 +30,7 @@ export const servicesRouter = createTRPCRouter({
                     rating: true,
                     reviewsCount: true,
                     sellerId: true,
+                    createdAt: true,
                 },
             });
 
@@ -56,6 +57,7 @@ export const servicesRouter = createTRPCRouter({
                 reviewsCount: s.reviewsCount,
                 authorName: profilesMap[s.sellerId]?.displayName,
                 authorImage: profilesMap[s.sellerId]?.avatarUrl,
+                createdAt: s.createdAt,
             }));
         }),
 
