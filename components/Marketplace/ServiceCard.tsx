@@ -1,7 +1,8 @@
+"use client";
 import Link from "next/link";
 import {Card, CardContent, CardFooter, CardHeader} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
-import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
+import {Avatar, AvatarImage} from "@/components/ui/avatar";
 import {Star, Zap} from "lucide-react";
 
 export interface ServiceCardProps {
@@ -23,8 +24,12 @@ export function ServiceCard({
                                 rating,
                                 reviewsCount,
                                 authorName,
-    authorImage
+                                authorImage
                             }: ServiceCardProps) {
+
+    const dicebearUrl = (seed: string) =>
+        `https://api.dicebear.com/9.x/glass/svg?seed=${encodeURIComponent(seed)}`;
+
     return (
         <Link href={`/service/${id}`}>
             <Card className="h-full flex flex-col">
@@ -59,10 +64,7 @@ export function ServiceCard({
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
-                                <AvatarImage src={authorImage ?? ""}/>
-                                <AvatarFallback className="text-xs bg-secondary">
-                                    {authorName?.slice(0, 2)?.toUpperCase()}
-                                </AvatarFallback>
+                                <AvatarImage src={authorImage || dicebearUrl(authorName ?? "anon")} />
                             </Avatar>
                             <span className="text-xs text-muted-foreground">{authorName}</span>
                         </div>

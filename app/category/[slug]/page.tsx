@@ -17,7 +17,6 @@ import {
     Grid3X3,
     List,
     ArrowLeft,
-    Bot,
     Star,
     X
 } from "lucide-react";
