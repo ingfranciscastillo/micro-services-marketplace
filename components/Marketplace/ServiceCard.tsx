@@ -4,17 +4,21 @@ import {Card, CardContent, CardFooter, CardHeader} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
 import {Avatar, AvatarImage} from "@/components/ui/avatar";
 import {Star, Zap} from "lucide-react";
+import { useMemo } from "react";
 
 export interface ServiceCardProps {
     id: string;
     title: string;
     description: string;
     price: number;
-    rating?: number;
-    reviewsCount?: number;
+    rating?: number | null;
+    reviewsCount?: number | null;
     authorName?: string | null;
     authorImage?: string | null;
 }
+
+const getDicebearGlass = (seed: string) =>
+    `https://api.dicebear.com/7.x/glass/svg?seed=${encodeURIComponent(seed)}`;
 
 export function ServiceCard({
                                 id,
@@ -27,8 +31,12 @@ export function ServiceCard({
                                 authorImage
                             }: ServiceCardProps) {
 
-    const dicebearUrl = (seed: string) =>
-        `https://api.dicebear.com/9.x/glass/svg?seed=${encodeURIComponent(seed)}`;
+    const avatarSrc = useMemo(() => {
+        if (authorImage && authorImage.length > 0) return authorImage;
+
+        const seed = authorName || id || "Felix";
+        return getDicebearGlass(seed);
+    }, [authorImage, authorName, id]);
 
     return (
         <Link href={`/service/${id}`}>
@@ -56,15 +64,15 @@ export function ServiceCard({
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                             <Star className="h-4 w-4 fill-warning text-warning"/>
-                            <span className="text-sm font-medium">{rating}</span>
-                            <span className="text-xs text-muted-foreground">({reviewsCount})</span>
+                            <span className="text-sm font-medium">{rating ?? "N/A"}</span>
+                            <span className="text-xs text-muted-foreground">({reviewsCount ?? 0})</span>
                         </div>
                     </div>
 
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
-                                <AvatarImage src={authorImage || dicebearUrl(authorName ?? "anon")} />
+                                <AvatarImage src={avatarSrc} alt={authorName ?? "user"} />
                             </Avatar>
                             <span className="text-xs text-muted-foreground">{authorName}</span>
                         </div>

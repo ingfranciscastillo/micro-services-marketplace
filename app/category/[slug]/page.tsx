@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link";
-import {useParams} from "next/navigation";
-import { useState, useMemo } from "react";
+import {useParams, useSearchParams} from "next/navigation";
+import {useState, useMemo, Fragment} from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ServiceCard } from "@/components/marketplace/ServiceCard";
@@ -25,6 +25,20 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { DynamicIcon, IconName } from "lucide-react/dynamic";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList, BreadcrumbPage,
+    BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink, PaginationNext,
+    PaginationPrevious
+} from "@/components/ui/pagination";
 
 const priceRanges = [
     { value: "free", label: "Free", min: 0, max: 0 },
@@ -44,6 +58,7 @@ const sortOptions = [
 
 const CategoryDetail = () => {
     const params = useParams();
+    const searchParams = useSearchParams();
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState<
         "popular" | "rating" | "newest" | "price-low" | "price-high"
@@ -63,14 +78,22 @@ const CategoryDetail = () => {
     const { data: category, isLoading: categoryLoading } =
         useQuery(trpc.categories.getBySlug.queryOptions({ slug }));
 
-    const { data: services = [], isLoading: servicesLoading } =
-        useQuery(trpc.services.byCategory.queryOptions({ slug }));
+    const page = Number(searchParams.get("page") ?? 1);
+
+    const { data: services, isLoading: serviceLoading } = useQuery(trpc.services.byCategory.queryOptions({
+        slug,
+        page,
+        limit: 12,
+    }))
 
     const CategoryIcon = DynamicIcon;
 
     // Filter services
     const filteredServices = useMemo(() => {
-        let result = [...services];
+
+        if (!services?.items) return [];
+
+        let result = [...services.items];
 
         // 🔍 Search
         if (searchQuery) {
@@ -95,25 +118,24 @@ const CategoryDetail = () => {
 
         // ⭐ Rating
         if (minRating > 0) {
-            result = result.filter(s => s.rating >= minRating);
+            result = result.filter(s => (s.rating ?? 0) >= minRating);
         }
 
-        // 🔃 Sort
         switch (sortBy) {
             case "popular":
-                result.sort((a, b) => b.reviewsCount - a.reviewsCount);
+                result.sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0));
                 break;
 
             case "rating":
-                result.sort((a, b) => b.rating - a.rating);
+                result.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
                 break;
 
             case "newest":
-                result.sort(
-                    (a, b) =>
-                        new Date(b.createdAt).getTime() -
-                        new Date(a.createdAt).getTime()
-                );
+                result.sort((a, b) => {
+                    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                    return dateB - dateA;
+                });
                 break;
 
             case "price-low":
@@ -126,7 +148,7 @@ const CategoryDetail = () => {
         }
 
         return result;
-    }, [services, searchQuery, selectedPrices, minRating, sortBy]);
+    }, [services?.items, searchQuery, selectedPrices, minRating, sortBy]);
 
     const togglePriceFilter = (value: string) => {
         setSelectedPrices(prev =>
@@ -145,7 +167,7 @@ const CategoryDetail = () => {
 
     const hasActiveFilters = searchQuery || selectedPrices.length > 0 || minRating > 0;
 
-    if (categoryLoading || servicesLoading) {
+    if (categoryLoading || serviceLoading) {
         return <div>Loading...</div>;
     }
 
@@ -220,16 +242,30 @@ const CategoryDetail = () => {
 
             <main className="container mx-auto px-4 py-8">
                 {/* Breadcrumb */}
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-                    <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
-                    <span>/</span>
-                    <Link href="/categories" className="hover:text-foreground transition-colors">Categories</Link>
-                    <span>/</span>
-                    <span className="text-foreground">{category.name}</span>
-                </div>
+                <Breadcrumb>
+                    <BreadcrumbList>
+                        <BreadcrumbItem>
+                            <BreadcrumbLink asChild>
+                                <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+                            </BreadcrumbLink>
+                        </BreadcrumbItem>
+                        <BreadcrumbSeparator/>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink asChild>
+                                    <Link href="/categories" className="hover:text-foreground transition-colors">Categories</Link>
+                                </BreadcrumbLink>
+                            </BreadcrumbItem>
+                        <BreadcrumbSeparator/>
+                        <BreadcrumbItem>
+                            <BreadcrumbPage>
+                                <span className="text-foreground">{category.name}</span>
+                            </BreadcrumbPage>
+                        </BreadcrumbItem>
+                    </BreadcrumbList>
+                </Breadcrumb>
 
                 {/* Category Header */}
-                <div className="mb-8">
+                <div className="my-8">
                     <Link href="/categories" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4">
                         <ArrowLeft className="h-4 w-4 mr-1" />
                         All Categories
@@ -393,6 +429,68 @@ const CategoryDetail = () => {
                                 ))}
                             </div>
                         )}
+
+                        {/* Paginación */}
+                        {services && services.totalPages > 1 && (
+                            <div className="flex justify-center gap-2 mt-12">
+                                <Pagination>
+                                    <PaginationContent>
+                                        {/* Previous */}
+                                        <PaginationItem>
+                                            {page > 1 ? (
+                                                <PaginationPrevious href={`?page=${page - 1}`} />
+                                            ) : (
+                                                <PaginationPrevious
+                                                    href="#"
+                                                    className="pointer-events-none opacity-50"
+                                                />
+                                            )}
+                                        </PaginationItem>
+
+                                        {/* Números de página */}
+                                        {Array.from({ length: services.totalPages }, (_, i) => i + 1)
+                                            .filter(p => {
+                                                // Mostrar: primera, última, actual, y ±1 de la actual
+                                                return p === 1 ||
+                                                    p === services.totalPages ||
+                                                    Math.abs(p - page) <= 1;
+                                            })
+                                            .map((p, idx, arr) => (
+                                                <Fragment key={p}>
+                                                    {/* Ellipsis si hay salto */}
+                                                    {idx > 0 && p - arr[idx - 1] > 1 && (
+                                                        <PaginationItem>
+                                                            <span className="px-3 py-2">...</span>
+                                                        </PaginationItem>
+                                                    )}
+                                                    <PaginationItem>
+                                                        <PaginationLink
+                                                            href={`?page=${p}`}
+                                                            isActive={p === page}
+                                                        >
+                                                            {p}
+                                                        </PaginationLink>
+                                                    </PaginationItem>
+                                                </Fragment>
+                                            ))
+                                        }
+
+                                        {/* Next */}
+                                        <PaginationItem>
+                                            {page < services.totalPages ? (
+                                                <PaginationNext href={`?page=${page + 1}`} />
+                                            ) : (
+                                                <PaginationNext
+                                                    href="#"
+                                                    className="pointer-events-none opacity-50"
+                                                />
+                                            )}
+                                        </PaginationItem>
+                                    </PaginationContent>
+                                </Pagination>
+                            </div>
+                        )}
+
                     </div>
                 </div>
             </main>

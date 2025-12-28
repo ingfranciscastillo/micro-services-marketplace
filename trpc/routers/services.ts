@@ -1,92 +1,155 @@
 import {z} from "zod";
 import {protectedProcedure, publicProcedure, createTRPCRouter} from "../init"
 import {categories, profiles, reviews, services} from "@/lib/db/schema";
-import {eq, desc, sql, inArray} from "drizzle-orm";
+import {eq, desc, sql, or, lte, ilike, gte, and} from "drizzle-orm";
 
 export const servicesRouter = createTRPCRouter({
-    getAll: publicProcedure.input(
-        z.object({
-            limit: z.number().min(1).max(50).default(24),
-            offset: z.number().min(0).default(0),
-        })
-    ).query( async ({ctx, input}) => {
-        const { limit, offset } = input;
+    getAll: publicProcedure
+        .input(
+            z.object({
+                page: z.number().min(1).default(1),
+                limit: z.number().min(1).max(50).default(12),
+                // Filtros opcionales
+                categoryId: z.string().nullish(),
+                minPrice: z.number().nullish(),
+                maxPrice: z.number().nullish(),
+                minRating: z.number().nullish(),
+                search: z.string().nullish(),
+            })
+        )
+        .query(async ({ ctx, input }) => {
+            const { page, limit, categoryId, minPrice, maxPrice, minRating, search } = input;
+            const offset = (page - 1) * limit;
 
-        return await ctx.db.select({
-            id: services.id,
-            title: services.title,
-            description: services.description,
-            price: services.price,
-            createdAt: services.createdAt,
+            // Construir condiciones WHERE
+            const conditions = [];
 
-            authorName: profiles.displayName,
-            authorImage: profiles.avatarUrl,
+            if (categoryId) {
+                conditions.push(eq(services.categoryId, categoryId));
+            }
 
-            reviewCount: sql<number>`COUNT(${reviews.id})`,
-            rating: sql<number>`COALESCE(AVG(${reviews.rating}), 0)`,
-        }).from(services)
-            .leftJoin(profiles, eq(services.sellerId, profiles.id))
-            .leftJoin(reviews, eq(reviews.serviceId, services.id))
-            .groupBy(
-                services.id,
-                profiles.displayName,
-                profiles.avatarUrl
-            )
-            .orderBy(desc(services.createdAt))
-            .limit(limit)
-            .offset(offset)
+            if (minPrice !== null && minPrice !== undefined) {
+                conditions.push(gte(services.price, minPrice));
+            }
 
-    }),
+            if (maxPrice !== null && maxPrice !== undefined) {
+                conditions.push(lte(services.price, maxPrice));
+            }
+
+            if (search) {
+                conditions.push(
+                    or(
+                        ilike(services.title, `%${search}%`),
+                        ilike(services.description, `%${search}%`)
+                    )
+                );
+            }
+
+            const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+            // 1️⃣ Total count con filtros
+            const [{ count }] = await ctx.db
+                .select({ count: sql<number>`COUNT(DISTINCT ${services.id})` })
+                .from(services)
+                .leftJoin(reviews, eq(reviews.serviceId, services.id))
+                .where(whereClause);
+
+            // 2️⃣ Paginated items con filtros
+            const items = await ctx.db
+                .select({
+                    id: services.id,
+                    title: services.title,
+                    description: services.description,
+                    price: services.price,
+                    categoryId: services.categoryId,
+                    createdAt: services.createdAt,
+                    authorName: profiles.displayName,
+                    authorImage: profiles.avatarUrl,
+                    reviewCount: sql<number>`COUNT(${reviews.id})`,
+                    rating: sql<number>`COALESCE(AVG(${reviews.rating}), 0)`,
+                })
+                .from(services)
+                .leftJoin(profiles, eq(services.sellerId, profiles.id))
+                .leftJoin(reviews, eq(reviews.serviceId, services.id))
+                .where(whereClause)
+                .groupBy(
+                    services.id,
+                    profiles.displayName,
+                    profiles.avatarUrl
+                )
+                // Filtro de rating después del GROUP BY
+                .having(
+                    minRating ? gte(sql`COALESCE(AVG(${reviews.rating}), 0)`, minRating) : undefined
+                )
+                .orderBy(desc(services.createdAt))
+                .limit(limit)
+                .offset(offset);
+
+            return {
+                items,
+                total: Number(count),
+                page,
+                totalPages: Math.ceil(Number(count) / limit),
+            };
+        }),
 
     byCategory: publicProcedure
-        .input(z.object({slug: z.string()}))
+        .input(
+            z.object({
+                slug: z.string(),
+                page: z.number().min(1).default(1),
+                limit: z.number().min(1).max(30).default(12),
+            })
+        )
         .query(async ({ctx, input}) => {
-            // Obtenemos la categoría
+            const {slug, page, limit} = input;
+            const offset = (page - 1) * limit;
+
+            // 1️⃣ categoría
             const category = await ctx.db.query.categories.findFirst({
-                where: eq(categories.slug, input.slug),
-            });
-            if (!category) return [];
-
-            // Servicios + perfil del vendedor
-            const servicesWithAuthors = await ctx.db.query.services.findMany({
-                where: eq(services.categoryId, category.id),
-                columns: {
-                    id: true,
-                    title: true,
-                    description: true,
-                    price: true,
-                    rating: true,
-                    reviewsCount: true,
-                    sellerId: true,
-                    createdAt: true,
-                },
+                where: eq(categories.slug, slug),
+                columns: {id: true},
             });
 
-            // Traemos los perfiles
-            const sellerIds = servicesWithAuthors.map(s => s.sellerId);
-            const profilesMap = Object.fromEntries(
-                (await ctx.db.query.profiles.findMany({
-                    where: inArray(profiles.id, sellerIds),
-                    columns: {
-                        id: true,
-                        displayName: true,
-                        avatarUrl: true,
-                    },
-                })).map(p => [p.id, p])
-            );
+            if (!category) {
+                return {
+                    items: [],
+                    total: 0,
+                    page,
+                    totalPages: 0,
+                };
+            }
 
-            // Merge servicios con info del autor
-            return servicesWithAuthors.map(s => ({
-                id: s.id,
-                title: s.title,
-                description: s.description,
-                price: s.price,
-                rating: s.rating,
-                reviewsCount: s.reviewsCount,
-                authorName: profilesMap[s.sellerId]?.displayName,
-                authorImage: profilesMap[s.sellerId]?.avatarUrl,
-                createdAt: s.createdAt,
-            }));
+            const [{count}] = await ctx.db
+                .select({count: sql<number>`COUNT(*)`})
+                .from(services)
+                .where(eq(services.categoryId, category.id));
+
+            const items = await ctx.db
+                .select({
+                    id: services.id,
+                    title: services.title,
+                    description: services.description,
+                    price: services.price,
+                    rating: services.rating,
+                    reviewsCount: services.reviewsCount,
+                    createdAt: services.createdAt,
+                    authorName: profiles.displayName,
+                    authorImage: profiles.avatarUrl,
+                })
+                .from(services)
+                .leftJoin(profiles, eq(services.sellerId, profiles.id))
+                .where(eq(services.categoryId, category.id))
+                .orderBy(desc(services.createdAt))
+                .limit(limit)
+                .offset(offset);
+
+            return {
+                items,
+                total: Number(count),
+                page,
+                totalPages: Math.ceil(Number(count) / limit),
+            };
         }),
 
     count: publicProcedure.query(async ({ctx}) => {
