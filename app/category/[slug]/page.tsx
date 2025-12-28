@@ -1,16 +1,18 @@
 "use client"
 
 import Link from "next/link";
-import {useParams, useSearchParams} from "next/navigation";
-import {useState, useMemo, Fragment} from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { useState, useMemo, Fragment } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ServiceCard } from "@/components/marketplace/ServiceCard";
+import { ServicesSkeletonGrid } from "@/components/Marketplace/ServicesSkeletonGrid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
     Search,
     SlidersHorizontal,
@@ -29,16 +31,19 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     BreadcrumbLink,
-    BreadcrumbList, BreadcrumbPage,
+    BreadcrumbList,
+    BreadcrumbPage,
     BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
 import {
     Pagination,
     PaginationContent,
     PaginationItem,
-    PaginationLink, PaginationNext,
+    PaginationLink,
+    PaginationNext,
     PaginationPrevious
 } from "@/components/ui/pagination";
+import { useDebounceValue } from "usehooks-ts";
 
 const priceRanges = [
     { value: "free", label: "Free", min: 0, max: 0 },
@@ -56,100 +61,101 @@ const sortOptions = [
     { value: "price-high", label: "Price: High to Low" },
 ];
 
+type SortOption = "popular" | "rating" | "newest" | "price-low" | "price-high";
+
 const CategoryDetail = () => {
     const params = useParams();
     const searchParams = useSearchParams();
+
+    // Estados de filtros
     const [searchQuery, setSearchQuery] = useState("");
-    const [sortBy, setSortBy] = useState<
-        "popular" | "rating" | "newest" | "price-low" | "price-high"
-    >("popular");
+    const [debouncedSearch] = useDebounceValue(searchQuery, 300);
+    const [sortBy, setSortBy] = useState<SortOption>("popular");
     const [selectedPrices, setSelectedPrices] = useState<string[]>([]);
     const [minRating, setMinRating] = useState<number>(0);
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
     const trpc = useTRPC();
 
-    const slug = Array.isArray(params.slug)
-        ? params.slug[0]
-        : params.slug;
+    const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
 
-    if (!slug) return null;
-
-    const { data: category, isLoading: categoryLoading } =
-        useQuery(trpc.categories.getBySlug.queryOptions({ slug }));
-
+    // Paginación
     const page = Number(searchParams.get("page") ?? 1);
+    const limit = 12;
 
-    const { data: services, isLoading: serviceLoading } = useQuery(trpc.services.byCategory.queryOptions({
-        slug,
-        page,
-        limit: 12,
-    }))
+    // Calcular filtro de precio
+    const priceFilter = useMemo(() => {
+        if (selectedPrices.length === 0) return { min: undefined, max: undefined };
 
-    const CategoryIcon = DynamicIcon;
+        let min = Infinity;
+        let max = -Infinity;
 
-    // Filter services
-    const filteredServices = useMemo(() => {
+        selectedPrices.forEach(value => {
+            const range = priceRanges.find(r => r.value === value);
+            if (range) {
+                if (value === "free") {
+                    min = 0;
+                    max = 0;
+                } else {
+                    min = Math.min(min, range.min);
+                    max = Math.max(max, range.max === Infinity ? 999999 : range.max);
+                }
+            }
+        });
 
+        return {
+            min: min === Infinity ? undefined : min,
+            max: max === -Infinity ? undefined : (max === 999999 ? undefined : max),
+        };
+    }, [selectedPrices]);
+
+    // Queries
+    const { data: category, isLoading: categoryLoading } = useQuery({
+        ...trpc.categories.getBySlug.queryOptions({ slug: slug ?? "" }),
+        enabled: !!slug,
+    });
+
+    const { data: services, isLoading: servicesLoading, isFetching } = useQuery({
+        ...trpc.services.byCategory.queryOptions({
+            slug: slug ?? "",
+            page,
+            limit,
+            minPrice: priceFilter.min,
+            maxPrice: priceFilter.max,
+            minRating: minRating > 0 ? minRating : undefined,
+            search: debouncedSearch || undefined,
+        }),
+        enabled: !!slug,
+    });
+
+    // Ordenamiento (solo en cliente, el filtrado es en servidor)
+    const sortedServices = useMemo(() => {
         if (!services?.items) return [];
 
-        let result = [...services.items];
-
-        // 🔍 Search
-        if (searchQuery) {
-            const q = searchQuery.toLowerCase();
-            result = result.filter(
-                s =>
-                    s.title.toLowerCase().includes(q) ||
-                    s.description.toLowerCase().includes(q)
-            );
-        }
-
-        // 💰 Price
-        if (selectedPrices.length > 0) {
-            result = result.filter(service =>
-                selectedPrices.some(value => {
-                    const range = priceRanges.find(r => r.value === value);
-                    if (!range) return false;
-                    return service.price >= range.min && service.price <= range.max;
-                })
-            );
-        }
-
-        // ⭐ Rating
-        if (minRating > 0) {
-            result = result.filter(s => (s.rating ?? 0) >= minRating);
-        }
+        const result = [...services.items];
 
         switch (sortBy) {
             case "popular":
                 result.sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0));
                 break;
-
             case "rating":
                 result.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
                 break;
-
             case "newest":
-                result.sort((a, b) => {
-                    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-                    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-                    return dateB - dateA;
-                });
+                // Ya viene ordenado por fecha del servidor
                 break;
-
             case "price-low":
                 result.sort((a, b) => a.price - b.price);
                 break;
-
             case "price-high":
                 result.sort((a, b) => b.price - a.price);
                 break;
         }
 
         return result;
-    }, [services?.items, searchQuery, selectedPrices, minRating, sortBy]);
+    }, [services?.items, sortBy]);
 
+    // Handlers
     const togglePriceFilter = (value: string) => {
         setSelectedPrices(prev =>
             prev.includes(value)
@@ -167,25 +173,12 @@ const CategoryDetail = () => {
 
     const hasActiveFilters = searchQuery || selectedPrices.length > 0 || minRating > 0;
 
-    if (categoryLoading || serviceLoading) {
-        return <div>Loading...</div>;
-    }
+    const CategoryIcon = DynamicIcon;
 
-    if (!category) {
-        return (
-            <div className="min-h-screen bg-background">
-                <Navbar />
-                <main className="container mx-auto px-4 py-20 text-center">
-                    <h1 className="text-2xl font-bold mb-4">Category not found</h1>
-                    <Link href="/categories">
-                        <Button>Back to Categories</Button>
-                    </Link>
-                </main>
-                <Footer />
-            </div>
-        );
-    }
+    // Early return si no hay slug
+    if (!slug) return null;
 
+    // Componente de filtros
     const FilterContent = () => (
         <div className="space-y-6">
             {/* Price filter */}
@@ -197,7 +190,7 @@ const CategoryDetail = () => {
                             <Checkbox
                                 id={range.value}
                                 checked={selectedPrices.includes(range.value)}
-                                onClick={() => togglePriceFilter(range.value)}
+                                onCheckedChange={() => togglePriceFilter(range.value)}
                             />
                             <label
                                 htmlFor={range.value}
@@ -236,6 +229,22 @@ const CategoryDetail = () => {
         </div>
     );
 
+    // Category not found
+    if (!categoryLoading && !category) {
+        return (
+            <div className="min-h-screen bg-background">
+                <Navbar />
+                <main className="container mx-auto px-4 py-20 text-center">
+                    <h1 className="text-2xl font-bold mb-4">Category not found</h1>
+                    <Link href="/categories">
+                        <Button>Back to Categories</Button>
+                    </Link>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-background">
             <Navbar />
@@ -249,16 +258,20 @@ const CategoryDetail = () => {
                                 <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
                             </BreadcrumbLink>
                         </BreadcrumbItem>
-                        <BreadcrumbSeparator/>
-                            <BreadcrumbItem>
-                                <BreadcrumbLink asChild>
-                                    <Link href="/categories" className="hover:text-foreground transition-colors">Categories</Link>
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                        <BreadcrumbSeparator/>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem>
+                            <BreadcrumbLink asChild>
+                                <Link href="/categories" className="hover:text-foreground transition-colors">Categories</Link>
+                            </BreadcrumbLink>
+                        </BreadcrumbItem>
+                        <BreadcrumbSeparator />
                         <BreadcrumbItem>
                             <BreadcrumbPage>
-                                <span className="text-foreground">{category.name}</span>
+                                {categoryLoading ? (
+                                    <Skeleton className="h-4 w-24" />
+                                ) : (
+                                    <span className="text-foreground">{category?.name}</span>
+                                )}
                             </BreadcrumbPage>
                         </BreadcrumbItem>
                     </BreadcrumbList>
@@ -270,25 +283,37 @@ const CategoryDetail = () => {
                         <ArrowLeft className="h-4 w-4 mr-1" />
                         All Categories
                     </Link>
-                    <div className="flex items-center gap-4">
-                        <div
-                            className="p-4 rounded-2xl"
-                            style={{ backgroundColor: `${category.color}20` }}
-                        >
-                            <CategoryIcon
-                                name={category.icon as IconName}
-                                className="h-8 w-8"
-                                style={{ color: category.color }}
-                            />
+
+                    {categoryLoading ? (
+                        <div className="flex items-center gap-4">
+                            <Skeleton className="h-16 w-16 rounded-2xl" />
+                            <div>
+                                <Skeleton className="h-8 w-48 mb-2" />
+                                <Skeleton className="h-4 w-72" />
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-3xl font-bold">{category.name}</h1>
-                            <p className="text-muted-foreground mt-1">{category.description}</p>
+                    ) : category && (
+                        <div className="flex items-center gap-4">
+                            <div
+                                className="p-4 rounded-2xl"
+                                style={{ backgroundColor: `${category.color}20` }}
+                            >
+                                <CategoryIcon
+                                    name={category.icon as IconName}
+                                    className="h-8 w-8"
+                                    style={{ color: category.color }}
+                                />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-bold">{category.name}</h1>
+                                <p className="text-muted-foreground mt-1">{category.description}</p>
+                            </div>
                         </div>
-                    </div>
+                    )}
+
                     <div className="mt-4">
                         <Badge variant="secondary" className="text-sm">
-                            {filteredServices.length} services available
+                            {services?.total ?? 0} services available
                         </Badge>
                     </div>
                 </div>
@@ -330,7 +355,7 @@ const CategoryDetail = () => {
                                             )}
                                         </Button>
                                     </SheetTrigger>
-                                    <SheetContent side="left" className={"w-80"}>
+                                    <SheetContent side="left" className="w-80">
                                         <SheetHeader>
                                             <SheetTitle>Filters</SheetTitle>
                                         </SheetHeader>
@@ -342,9 +367,7 @@ const CategoryDetail = () => {
 
                                 <Select
                                     value={sortBy}
-                                    onValueChange={(value) =>
-                                        setSortBy(value as "popular" | "rating" | "newest" | "price-low" | "price-high")
-                                    }
+                                    onValueChange={(value) => setSortBy(value as SortOption)}
                                 >
                                     <SelectTrigger className="w-[180px]">
                                         <SelectValue placeholder="Sort by" />
@@ -357,7 +380,6 @@ const CategoryDetail = () => {
                                         ))}
                                     </SelectContent>
                                 </Select>
-
 
                                 <div className="hidden sm:flex border rounded-lg">
                                     <Button
@@ -411,7 +433,9 @@ const CategoryDetail = () => {
                         )}
 
                         {/* Services Grid/List */}
-                        {filteredServices.length === 0 ? (
+                        {(servicesLoading || isFetching) ? (
+                            <ServicesSkeletonGrid count={12} />
+                        ) : sortedServices.length === 0 ? (
                             <div className="text-center py-12">
                                 <p className="text-muted-foreground mb-4">No services found matching your criteria.</p>
                                 <Button variant="outline" onClick={clearFilters}>
@@ -424,14 +448,24 @@ const CategoryDetail = () => {
                                     ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
                                     : "flex flex-col gap-4"
                             }>
-                                {filteredServices.map((service) => (
-                                    <ServiceCard key={service.id} {...service} />
+                                {sortedServices.map((service) => (
+                                    <ServiceCard
+                                        key={service.id}
+                                        id={service.id}
+                                        title={service.title}
+                                        description={service.description}
+                                        price={service.price}
+                                        rating={service.rating ?? undefined}
+                                        reviewsCount={service.reviewsCount ?? undefined}
+                                        authorName={service.authorName}
+                                        authorImage={service.authorImage}
+                                    />
                                 ))}
                             </div>
                         )}
 
-                        {/* Paginación */}
-                        {services && services.totalPages > 1 && (
+                        {/* Pagination */}
+                        {!isFetching && services && services.totalPages > 1 && (
                             <div className="flex justify-center gap-2 mt-12">
                                 <Pagination>
                                     <PaginationContent>
@@ -447,17 +481,15 @@ const CategoryDetail = () => {
                                             )}
                                         </PaginationItem>
 
-                                        {/* Números de página */}
+                                        {/* Page numbers */}
                                         {Array.from({ length: services.totalPages }, (_, i) => i + 1)
-                                            .filter(p => {
-                                                // Mostrar: primera, última, actual, y ±1 de la actual
-                                                return p === 1 ||
-                                                    p === services.totalPages ||
-                                                    Math.abs(p - page) <= 1;
-                                            })
+                                            .filter(p =>
+                                                p === 1 ||
+                                                p === services.totalPages ||
+                                                Math.abs(p - page) <= 1
+                                            )
                                             .map((p, idx, arr) => (
                                                 <Fragment key={p}>
-                                                    {/* Ellipsis si hay salto */}
                                                     {idx > 0 && p - arr[idx - 1] > 1 && (
                                                         <PaginationItem>
                                                             <span className="px-3 py-2">...</span>
@@ -472,8 +504,7 @@ const CategoryDetail = () => {
                                                         </PaginationLink>
                                                     </PaginationItem>
                                                 </Fragment>
-                                            ))
-                                        }
+                                            ))}
 
                                         {/* Next */}
                                         <PaginationItem>
@@ -490,7 +521,6 @@ const CategoryDetail = () => {
                                 </Pagination>
                             </div>
                         )}
-
                     </div>
                 </div>
             </main>
